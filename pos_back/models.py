@@ -29,11 +29,11 @@ class Course(models.Model):
 
 
 class Device(models.Model):
-    mac_address = models.CharField(max_length=255, unique=True)
+    android_id = models.CharField(max_length=255, unique=True)
     registered_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return self.mac_address
+        return self.android_id
 
 
 class Order(models.Model):
@@ -46,7 +46,7 @@ class Order(models.Model):
     ordered_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f"Order {self.buyer_email} - {self.device.mac_address}"
+        return f"Order {self.buyer_email} - {self.device.android_id}"
 
 
 admin.site.register(Teacher)
