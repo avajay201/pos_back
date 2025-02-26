@@ -22,7 +22,7 @@ from .views import RegisterDeviceAPIView, RegisterOrderAPIView, CourseAPIView, T
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('api/macadd/', RegisterDeviceAPIView.as_view()),
+    path('api/device-add/', RegisterDeviceAPIView.as_view()),
     path('api/teachers/', TeachersAPIView.as_view()),
     path('api/courses/<int:t_id>/', CourseAPIView.as_view()),
     path('api/order/', RegisterOrderAPIView.as_view()),
