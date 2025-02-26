@@ -53,3 +53,8 @@ admin.site.register(Teacher)
 admin.site.register(Course)
 admin.site.register(Device)
 admin.site.register(Order)
+
+
+admin.site.site_title = "Horizon Star"
+admin.site.site_header = "Horizon Star"
+admin.site.index_title = "Horizon Star Admin Panel"
