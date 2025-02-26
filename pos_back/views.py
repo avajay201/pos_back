@@ -19,10 +19,10 @@ class TeacherSerializer(serializers.ModelSerializer):
 
 class RegisterDeviceAPIView(APIView):
     def post(self, request):
-        mac = request.data.get('mac_address')
-        if not mac:
-            return Response({'error': 'Mac address is required.'}, status=status.HTTP_400_BAD_REQUEST)
-        Device.objects.get_or_create(mac_address=mac)
+        android_id = request.data.get('android_id')
+        if not android_id:
+            return Response({'error': 'Android ID is required.'}, status=status.HTTP_400_BAD_REQUEST)
+        Device.objects.get_or_create(android_id=android_id)
         return Response(status=status.HTTP_200_OK)
 
 
@@ -44,26 +44,21 @@ class TeachersAPIView(APIView):
 
 class RegisterOrderAPIView(APIView):
     def post(self, request):
-        coursesData = request.data.get('courses')
-        if not coursesData:
+        courses = request.data.get('courses')
+        if not courses:
             return Response({'error': 'Courses are required.'}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
-            device = Device.objects.get(mac_address=request.data['device'])
+            device = Device.objects.get(android_id=request.data['device'])
         except Device.DoesNotExist:
             return Response({'error': 'Device not found'}, status=status.HTTP_400_BAD_REQUEST)
 
-        courses_ids = list(list(crs.keys())[0] for crs in coursesData)
         try:
-            courses = Course.objects.filter(id__in=courses_ids)
+            courses = Course.objects.filter(id__in=courses)
         except Course.DoesNotExist:
             return Response({'error': 'One or more courses not found'}, status=status.HTTP_400_BAD_REQUEST)
 
-        total_price = 0
-        for crs in coursesData:
-            course_id = list(crs.keys())[0]
-            course = Course.objects.get(id=course_id)
-            total_price += course.price * crs[course_id]
+        total_price = sum([crs.price for crs in courses])
 
         order = Order.objects.create(device=device, buyer=request.data['buyer'], buyer_email=request.data['buyer_email'], buyer_phone=request.data['buyer_phone'], total_price=total_price)
         order.courses.set(courses)
