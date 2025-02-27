@@ -1,7 +1,7 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status, serializers
-from .models import Order, Device, Course, Teacher
+from .models import Order, Device, Course, Teacher, Subject
 
 
 
@@ -15,6 +15,12 @@ class TeacherSerializer(serializers.ModelSerializer):
     class Meta:
         model = Teacher
         fields = ('id', 'name', 'email', 'phone', 'profile_pic', 'created_at')
+
+
+class SubjectSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Subject
+        fields = ('id', 'name', 'description')
 
 
 class RegisterDeviceAPIView(APIView):
@@ -36,8 +42,8 @@ class CourseAPIView(APIView):
 
 
 class TeachersAPIView(APIView):
-    def get(self, request):
-        teachers = Teacher.objects.all()
+    def get(self, request, s_id):
+        teachers = Teacher.objects.filter(subject=s_id)
         serializer = TeacherSerializer(teachers, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
@@ -71,3 +77,9 @@ class RegisterOrderAPIView(APIView):
             'ordered_at': order.ordered_at.strftime("%Y-%m-%d %H:%M:%S")
         }
         return Response(order_data, status=status.HTTP_201_CREATED)
+
+class SubjectsAPIView(APIView):
+    def get(self, request):
+        subjects = Subject.objects.all()
+        serializer = SubjectSerializer(subjects, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
