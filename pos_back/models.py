@@ -45,7 +45,8 @@ class Device(models.Model):
 
 class Order(models.Model):
     device = models.ForeignKey(Device, on_delete=models.CASCADE)
-    courses = models.ManyToManyField(Course)
+    # courses = models.ManyToManyField(Course)
+    stored_ids = models.TextField(default="[]")
     total_price = models.DecimalField(max_digits=10, decimal_places=2, default=0.0)
     buyer = models.CharField(max_length=255)
     buyer_email = models.EmailField()

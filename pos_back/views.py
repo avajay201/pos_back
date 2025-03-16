@@ -59,21 +59,23 @@ class RegisterOrderAPIView(APIView):
         except Device.DoesNotExist:
             return Response({'error': 'Device not found'}, status=status.HTTP_400_BAD_REQUEST)
 
-        try:
-            courses = Course.objects.filter(id__in=courses)
-        except Course.DoesNotExist:
-            return Response({'error': 'One or more courses not found'}, status=status.HTTP_400_BAD_REQUEST)
+        # try:
+        #     courses = Course.objects.filter(id__in=courses)
+        # except Course.DoesNotExist:
+        #     return Response({'error': 'One or more courses not found'}, status=status.HTTP_400_BAD_REQUEST)
 
-        total_price = sum([crs.price for crs in courses])
+        # total_price = sum([crs.price for crs in courses])
 
-        order = Order.objects.create(device=device, buyer=request.data['buyer'], buyer_email=request.data['buyer_email'], buyer_phone=request.data['buyer_phone'], total_price=total_price)
-        order.courses.set(courses)
+        order = Order.objects.create(device=device, buyer=request.data['buyer'], buyer_email=request.data['buyer_email'], buyer_phone=request.data['buyer_phone'], total_price=request.data.get('totalPrice', 0))
+        # order.courses.set(courses)
+        order.stored_ids = courses
+        order.save()
         order_data = {
             'buyer': order.buyer,
             'buyer_email': order.buyer_email,
             'buyer_phone': order.buyer_phone,
             'total_price': order.total_price,
-            'courses': [course.title for course in order.courses.all()],
+            'courses': order.stored_ids,
             'ordered_at': order.ordered_at.strftime("%Y-%m-%d %H:%M:%S")
         }
         return Response(order_data, status=status.HTTP_201_CREATED)
