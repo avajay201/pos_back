@@ -48,13 +48,13 @@ class Order(models.Model):
     # courses = models.ManyToManyField(Course)
     stored_ids = models.TextField(default="[]")
     total_price = models.DecimalField(max_digits=10, decimal_places=2, default=0.0)
-    buyer = models.CharField(max_length=255)
-    buyer_email = models.EmailField()
-    buyer_phone = models.CharField(max_length=15)
+    student_name = models.CharField(max_length=255)
+    address = models.TextField()
+    whatsapp_number = models.CharField(max_length=15)
     ordered_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f"Order {self.buyer_email} - {self.device.android_id}"
+        return f"Order {self.address} - {self.device.android_id}"
 
 
 admin.site.register(Subject)

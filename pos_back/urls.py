@@ -18,7 +18,7 @@ from django.contrib import admin
 from django.urls import path, re_path
 from django.conf import settings
 from django.conf.urls.static import static
-from .views import RegisterDeviceAPIView, RegisterOrderAPIView, CourseAPIView, TeachersAPIView, SubjectsAPIView
+from .views import RegisterDeviceAPIView, RegisterOrderAPIView, CourseAPIView, TeachersAPIView, SubjectsAPIView, OrdersView
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -27,6 +27,7 @@ urlpatterns = [
     path('api/teachers/<int:s_id>/', TeachersAPIView.as_view()),
     path('api/courses/<int:t_id>/', CourseAPIView.as_view()),
     path('api/order/', RegisterOrderAPIView.as_view()),
+    path('api/orders/', OrdersView.as_view()),
 ]
 
 if settings.DEBUG:
