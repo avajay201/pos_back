@@ -61,7 +61,7 @@ class Order(models.Model):
 # admin.site.register(Teacher)
 # admin.site.register(Course)
 admin.site.register(Device)
-# admin.site.register(Order)
+admin.site.register(Order)
 
 
 admin.site.site_title = "Horizon Star"
