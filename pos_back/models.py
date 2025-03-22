@@ -57,9 +57,9 @@ class Order(models.Model):
         return f"Order {self.address} - {self.device.android_id}"
 
 
-admin.site.register(Subject)
-admin.site.register(Teacher)
-admin.site.register(Course)
+# admin.site.register(Subject)
+# admin.site.register(Teacher)
+# admin.site.register(Course)
 admin.site.register(Device)
 admin.site.register(Order)
 
