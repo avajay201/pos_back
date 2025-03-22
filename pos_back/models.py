@@ -1,5 +1,8 @@
 from django.contrib import admin
 from django.db import models
+from django.contrib.admin import SimpleListFilter
+from django.utils.translation import gettext_lazy as _
+from django.utils.timezone import datetime
 
 
 
@@ -57,11 +60,46 @@ class Order(models.Model):
         return f"Order {self.address} - {self.device.android_id}"
 
 
+from django.contrib.admin import SimpleListFilter
+from django.utils.translation import gettext_lazy as _
+from django.utils.timezone import datetime
+
+
+class CustomDateRangeFilter(SimpleListFilter):
+    title = _('Order Date Range')  # Title in admin panel
+    parameter_name = 'ordered_at'  # Query parameter
+
+    def lookups(self, request, model_admin):
+        """Not used, but required for SimpleListFilter"""
+        return ()
+
+    def queryset(self, request, queryset):
+        """Filter the queryset based on user input."""
+        from_date = request.GET.get('from_date')
+        to_date = request.GET.get('to_date')
+
+        if from_date:
+            queryset = queryset.filter(ordered_at__gte=from_date)
+        if to_date:
+            queryset = queryset.filter(ordered_at__lte=to_date)
+
+        return queryset
+
 # admin.site.register(Subject)
 # admin.site.register(Teacher)
 # admin.site.register(Course)
-admin.site.register(Device)
-admin.site.register(Order)
+@admin.register(Device)
+class DeviceAdmin(admin.ModelAdmin):
+    list_display = ('android_id', 'registered_at')
+    search_fields = ('android_id',)
+    list_filter = ('registered_at',)
+
+
+@admin.register(Order)
+class OrderAdmin(admin.ModelAdmin):
+    list_display = ('student_name', 'device', 'total_price', 'ordered_at')
+    search_fields = ('student_name', 'device__android_id', 'whatsapp_number', 'address')
+    list_filter = ('total_price', 'student_name', 'whatsapp_number', 'address', 'ordered_at')
 
 
 admin.site.site_title = "Iraq Academy"
