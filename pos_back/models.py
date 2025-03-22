@@ -99,7 +99,7 @@ class DeviceAdmin(admin.ModelAdmin):
 class OrderAdmin(admin.ModelAdmin):
     list_display = ('student_name', 'device', 'total_price', 'ordered_at')
     search_fields = ('student_name', 'device__android_id', 'whatsapp_number', 'address')
-    list_filter = ('total_price', 'student_name', 'whatsapp_number', 'address', 'ordered_at')
+    list_filter = ('total_price', 'device', 'whatsapp_number', 'address', 'ordered_at')
 
 
 admin.site.site_title = "Iraq Academy"
