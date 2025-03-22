@@ -44,7 +44,7 @@ INSTALLED_APPS = [
 ]
 
 JAZZMIN_SETTINGS = {
-    "welcome_sign": "Welcome to Horizon Star",
+    "welcome_sign": "Welcome to Iraq Academy",
 }
 
 MIDDLEWARE = [
