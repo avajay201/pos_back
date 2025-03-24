@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'pos_back',
     'rest_framework',
+    'rangefilter',
 ]
 
 JAZZMIN_SETTINGS = {
