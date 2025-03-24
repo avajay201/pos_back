@@ -1,8 +1,8 @@
 from django.contrib import admin
 from django.db import models
-from django.contrib.admin import SimpleListFilter
-from django.utils.translation import gettext_lazy as _
-from django.utils.timezone import datetime
+from rangefilter.filters import DateRangeFilter
+from django.db.models import Sum
+from django.contrib.admin.views.main import ChangeList
 
 
 
@@ -48,7 +48,6 @@ class Device(models.Model):
 
 class Order(models.Model):
     device = models.ForeignKey(Device, on_delete=models.CASCADE)
-    # courses = models.ManyToManyField(Course)
     stored_ids = models.TextField(default="[]")
     total_price = models.DecimalField(max_digits=10, decimal_places=2, default=0.0)
     student_name = models.CharField(max_length=255)
@@ -60,34 +59,6 @@ class Order(models.Model):
         return f"Order {self.address} - {self.device.android_id}"
 
 
-from django.contrib.admin import SimpleListFilter
-from django.utils.translation import gettext_lazy as _
-from django.utils.timezone import datetime
-
-
-class CustomDateRangeFilter(SimpleListFilter):
-    title = _('Order Date Range')  # Title in admin panel
-    parameter_name = 'ordered_at'  # Query parameter
-
-    def lookups(self, request, model_admin):
-        """Not used, but required for SimpleListFilter"""
-        return ()
-
-    def queryset(self, request, queryset):
-        """Filter the queryset based on user input."""
-        from_date = request.GET.get('from_date')
-        to_date = request.GET.get('to_date')
-
-        if from_date:
-            queryset = queryset.filter(ordered_at__gte=from_date)
-        if to_date:
-            queryset = queryset.filter(ordered_at__lte=to_date)
-
-        return queryset
-
-# admin.site.register(Subject)
-# admin.site.register(Teacher)
-# admin.site.register(Course)
 @admin.register(Device)
 class DeviceAdmin(admin.ModelAdmin):
     list_display = ('android_id', 'registered_at')
@@ -97,10 +68,23 @@ class DeviceAdmin(admin.ModelAdmin):
 
 @admin.register(Order)
 class OrderAdmin(admin.ModelAdmin):
-    list_display = ('student_name', 'device', 'total_price', 'ordered_at')
-    search_fields = ('student_name', 'device__android_id', 'whatsapp_number', 'address')
-    list_filter = ('total_price', 'device__android_id', 'whatsapp_number', 'ordered_at')
+    list_display = ('student_name', 'device', 'ordered_at')
+    list_filter = ('device__android_id', 'whatsapp_number', ('ordered_at', DateRangeFilter))
 
+    def changelist_view(self, request, extra_context=None):
+        cl = ChangeList(
+            request, self.model, self.list_display, self.list_display_links,
+            self.list_filter, self.date_hierarchy, self.search_fields,
+            self.list_select_related, self.list_per_page, self.list_max_show_all,
+            self.list_editable, self, request.GET, self.get_queryset(request)
+        )
+        queryset = cl.get_queryset(request)  # Apply the filters
+
+        # Aggregate sum of total_price for filtered entries
+        total_price = queryset.aggregate(Sum('total_price'))['total_price__sum'] or 0.0
+
+        request.session.total_price = total_price
+        return super().changelist_view(request, extra_context=extra_context)
 
 admin.site.site_title = "Iraq Academy"
 admin.site.site_header = "Iraq Academy"
