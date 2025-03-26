@@ -6,16 +6,16 @@ from django.contrib.admin.views.main import ChangeList
 from django.contrib.auth.models import User
 
 
-class Device(models.Model):
-    device_id = models.CharField(max_length=255, unique=True)
-    merchant = models.ForeignKey(User, on_delete=models.CASCADE)
-    registered_at = models.DateTimeField(auto_now_add=True)
+# class Device(models.Model):
+#     device_id = models.CharField(max_length=255, unique=True)
+#     merchant = models.ForeignKey(User, on_delete=models.CASCADE)
+#     registered_at = models.DateTimeField(auto_now_add=True)
 
-    def __str__(self):
-        return self.device_id
+#     def __str__(self):
+#         return self.device_id
 
 class Order(models.Model):
-    device = models.ForeignKey(Device, on_delete=models.CASCADE)
+    # device = models.ForeignKey(Device, on_delete=models.CASCADE)
     merchant = models.ForeignKey(User, on_delete=models.CASCADE)
     stored_ids = models.TextField(default="[]")
     total_price = models.DecimalField(max_digits=10, decimal_places=2, default=0.0)
@@ -25,20 +25,20 @@ class Order(models.Model):
     ordered_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f"Order {self.address} - {self.device.device_id}"
+        return f"Order from {self.merchant.username}"
 
 
-@admin.register(Device)
-class DeviceAdmin(admin.ModelAdmin):
-    list_display = ('device_id', 'registered_at')
-    search_fields = ('device_id',)
-    list_filter = ('registered_at', 'merchant')
+# @admin.register(Device)
+# class DeviceAdmin(admin.ModelAdmin):
+#     list_display = ('device_id', 'registered_at')
+#     search_fields = ('device_id',)
+#     list_filter = ('registered_at', 'merchant')
 
 
 @admin.register(Order)
 class OrderAdmin(admin.ModelAdmin):
-    list_display = ('student_name', 'device', 'ordered_at')
-    list_filter = ('device__device_id', 'whatsapp_number', 'merchant', ('ordered_at', DateRangeFilter))
+    list_display = ('student_name', 'ordered_at')
+    list_filter = ('whatsapp_number', 'merchant', ('ordered_at', DateRangeFilter))
 
     def changelist_view(self, request, extra_context=None):
         cl = ChangeList(

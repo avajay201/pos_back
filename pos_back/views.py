@@ -1,7 +1,7 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status, serializers
-from .models import Order, Device
+from .models import Order
 from datetime import datetime
 import json
 from rest_framework.permissions import AllowAny, IsAuthenticated
@@ -30,12 +30,12 @@ class RegisterOrderAPIView(APIView):
         if not courses:
             return Response({'error': 'Courses are required.'}, status=status.HTTP_400_BAD_REQUEST)
 
-        try:
-            device = Device.objects.get(device_id=request.data['device'], merchant=request.user)
-        except Device.DoesNotExist:
-            return Response({'error': 'Device not found'}, status=status.HTTP_400_BAD_REQUEST)
+        # try:
+        #     device = Device.objects.get(device_id=request.data['device'], merchant=request.user)
+        # except Device.DoesNotExist:
+        #     return Response({'error': 'Device not found'}, status=status.HTTP_400_BAD_REQUEST)
 
-        order = Order.objects.create(device=device, merchant=request.user, student_name=request.data['student_name'], address=request.data['address'], whatsapp_number=request.data['whatsapp_number'], total_price=request.data.get('totalPrice', 0))
+        order = Order.objects.create(merchant=request.user, student_name=request.data['student_name'], address=request.data['address'], whatsapp_number=request.data['whatsapp_number'], total_price=request.data.get('totalPrice', 0))
         order.stored_ids = courses.replace("'", '"')
         order.save()
         order_data = {
@@ -55,10 +55,10 @@ class OrdersView(APIView):
     def get(self, request):
         from_date = request.GET.get("from_date")
         to_date = request.GET.get("to_date")
-        device_id = request.GET.get("device_id")
+        # device_id = request.GET.get("device_id")
 
-        if not from_date or not to_date or not device_id:
-            return Response({"error": "device_id, from_date and to_date are required."}, status=status.HTTP_400_BAD_REQUEST)
+        if not from_date or not to_date:
+            return Response({"error": "from_date and to_date are required."}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
             from_date = datetime.strptime(from_date, "%Y-%m-%d")
@@ -66,7 +66,7 @@ class OrdersView(APIView):
         except ValueError:
             return Response({"error": "Invalid date format. Use YYYY-MM-DD."}, status=400)
 
-        orders = Order.objects.filter(ordered_at__date__range=[from_date, to_date], device__device_id=device_id, merchant=request.user)
+        orders = Order.objects.filter(ordered_at__date__range=[from_date, to_date], merchant=request.user)
         serializer = OrderSerializer(orders, many=True)
 
         return Response({"orders": serializer.data}, status=200)
@@ -78,7 +78,7 @@ class LoginAPI(APIView):
     def post(self, request):
         username = request.data.get('username')
         password = request.data.get('password')
-        device_id = request.data.get('device_id')
+        # device_id = request.data.get('device_id')
         
         if not username or not password:
             return Response({'error': 'Username and password are required'}, status=status.HTTP_400_BAD_REQUEST)
@@ -90,7 +90,7 @@ class LoginAPI(APIView):
 
         refresh = RefreshToken.for_user(user)
 
-        Device.objects.get_or_create(device_id=device_id, merchant=user)
+        # Device.objects.get_or_create(device_id=device_id, merchant=user)
 
         return Response({
             'access': str(refresh.access_token),
