@@ -45,6 +45,8 @@ INSTALLED_APPS = [
     'rangefilter',
 ]
 
+AUTH_USER_MODEL = 'pos_back.CustomUser'
+
 JAZZMIN_SETTINGS = {
     "welcome_sign": "Welcome to Iraq Academy",
 }

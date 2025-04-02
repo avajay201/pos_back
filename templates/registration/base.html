@@ -45,8 +45,15 @@
     <link href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,400i,700" rel="stylesheet">
     {% endif %}
 
-    {% block extrastyle %} {% endblock %}
+    {% block extrastyle %}
+    {% endblock %}
     {% block extrahead %} {% endblock %}
+    <style>
+        div.login-logo h1 img {
+            width: auto!important;
+        }
+    </style>
+
 </head>
 <body class="hold-transition jazzmin-login-page">
 
@@ -57,7 +64,7 @@
                 <source
                     srcset="{% static jazzmin_settings.login_logo_dark %}"
                     media="(prefers-color-scheme: dark)">
-                 <img style="height: 90px; width:250px" src="{% static '/admin/img/horizonStar.jpg' %}" alt="{{ jazzmin_settings.site_header }}">
+                 <img style="height: 90px; width:250px" src="{% static '/admin/img/logo-admin.png' %}" alt="{{ jazzmin_settings.site_header }}">
             </picture>
         </h1>
     </div>

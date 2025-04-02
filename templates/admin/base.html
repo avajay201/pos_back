@@ -87,6 +87,14 @@
             gap: 20px!important;
             align-items: baseline!important;
         }
+        div#search_group button{
+            display: none!important;
+        }
+        button.download-xlsx {
+            background: green!important;
+            color: white !important;
+            padding: 6px 12px !important;
+        }
     </style>
 </head>
 <body class="hold-transition{% if not jazzmin_settings.show_sidebar %} no-sidebar{% else %} sidebar-mini{% endif %} {% sidebar_status request %} {% if is_popup %}popup {% endif %}{% block bodyclass %}{% endblock %} {{ jazzmin_ui.body_classes }} {% if jazzmin_ui.dark_mode_theme %}theme-dark{% endif %}" data-admin-utc-offset="{% now "Z" %}">
@@ -366,7 +374,7 @@
             <div class="float-right d-none d-sm-inline">
                 <b>
                     <!-- Add your image here with inline CSS for styling -->
-                    <img src="{% static '/admin/img/horizonStar.jpg' %}" alt="Iraq Academy" style="height: 35px; margin-right: 5px; vertical-align: middle;">
+                    <img src="{% static '/admin/img/logo-admin.png' %}" alt="Iraq Academy" style="height: 35px; margin-right: 5px; vertical-align: middle;">
                     Iraq Academy
                 </b> 1.0.1
             </div>
@@ -418,6 +426,7 @@
 
 <script>
     const totalPrice = "{{request.session.total_price}}";
+    const discount_price = "{{request.session.discount_price}}";
     document.addEventListener("DOMContentLoaded", function () {
         var searchGroup = document.getElementById("search_group");
         if (searchGroup && totalPrice) {
@@ -428,6 +437,24 @@
             totalPriceElement.textContent = `Total Price: ${totalPrice}`;
             searchGroup.appendChild(totalPriceElement);
         };
+
+        if (searchGroup && discount_price) {
+            var discountPriceElement = document.createElement("div");
+            discountPriceElement.style.fontSize = "16px";
+            discountPriceElement.style.fontWeight = "bold";
+            discountPriceElement.style.marginTop = "10px";
+            discountPriceElement.textContent = `Payable Amount: ${discount_price}`;
+            searchGroup.appendChild(discountPriceElement);
+        };
+
+        let downloadButton = document.createElement("button");
+        downloadButton.className = "button download-xlsx";
+        downloadButton.innerText = "Download XLSX";
+        downloadButton.type = 'button';
+        downloadButton.onclick = function() {
+            window.location.href = "/export-xlsx/" + window.location.search;
+        };
+        document.querySelector(".controls")?.appendChild(downloadButton);
 
         var resetButton = document.querySelector("input[type='reset'].button");
 

@@ -18,13 +18,14 @@ from django.contrib import admin
 from django.urls import path, re_path
 from django.conf import settings
 from django.conf.urls.static import static
-from .views import RegisterOrderAPIView, OrdersView, LoginAPI
+from .views import RegisterOrderAPIView, OrdersView, LoginAPI, export_xlsx
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/login/', LoginAPI.as_view()),
     path('api/order/', RegisterOrderAPIView.as_view()),
     path('api/orders/', OrdersView.as_view()),
+    path("export-xlsx/", export_xlsx, name="export_xlsx"),
 ]
 
 if settings.DEBUG:

@@ -3,20 +3,16 @@ from django.db import models
 from rangefilter.filters import DateRangeFilter
 from django.db.models import Sum
 from django.contrib.admin.views.main import ChangeList
-from django.contrib.auth.models import User
+from decimal import Decimal
+from django.contrib.auth.models import AbstractUser
 
 
-# class Device(models.Model):
-#     device_id = models.CharField(max_length=255, unique=True)
-#     merchant = models.ForeignKey(User, on_delete=models.CASCADE)
-#     registered_at = models.DateTimeField(auto_now_add=True)
+class CustomUser(AbstractUser):
+    percentage = models.FloatField(default=0.0)
 
-#     def __str__(self):
-#         return self.device_id
 
 class Order(models.Model):
-    # device = models.ForeignKey(Device, on_delete=models.CASCADE)
-    merchant = models.ForeignKey(User, on_delete=models.CASCADE)
+    merchant = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
     stored_ids = models.TextField(default="[]")
     total_price = models.DecimalField(max_digits=10, decimal_places=2, default=0.0)
     student_name = models.CharField(max_length=255)
@@ -28,17 +24,10 @@ class Order(models.Model):
         return f"Order from {self.merchant.username}"
 
 
-# @admin.register(Device)
-# class DeviceAdmin(admin.ModelAdmin):
-#     list_display = ('device_id', 'registered_at')
-#     search_fields = ('device_id',)
-#     list_filter = ('registered_at', 'merchant')
-
-
 @admin.register(Order)
 class OrderAdmin(admin.ModelAdmin):
     list_display = ('student_name', 'ordered_at')
-    list_filter = ('whatsapp_number', 'merchant', ('ordered_at', DateRangeFilter))
+    list_filter = ('whatsapp_number', 'merchant__username', ('ordered_at', DateRangeFilter))
 
     def changelist_view(self, request, extra_context=None):
         cl = ChangeList(
@@ -49,10 +38,22 @@ class OrderAdmin(admin.ModelAdmin):
         )
         queryset = cl.get_queryset(request)
 
+        merchant__username = request.GET.get('merchant__username')
+        if merchant__username:
+            queryset = queryset.filter(merchant__username=merchant__username)
+
         total_price = queryset.aggregate(Sum('total_price'))['total_price__sum'] or 0.0
+        discount_price = total_price
+        if merchant__username and queryset.count() > 0:
+            merchant = CustomUser.objects.filter(username=merchant__username).first()
+            if merchant:
+                discount_price = total_price - (total_price * (Decimal(merchant.percentage) / Decimal(100)))
 
         request.session.total_price = total_price
+        request.session.discount_price = discount_price
         return super().changelist_view(request, extra_context=extra_context)
+
+admin.site.register(CustomUser)
 
 admin.site.site_title = "Iraq Academy"
 admin.site.site_header = "Iraq Academy"

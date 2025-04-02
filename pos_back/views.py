@@ -1,13 +1,18 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status, serializers
-from .models import Order
-from datetime import datetime
+from .models import Order, CustomUser
+from datetime import datetime, timedelta
 import json
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework_simplejwt.tokens import RefreshToken
-from django.contrib.auth.models import User
+import openpyxl
+from openpyxl.styles import Alignment, Font
+from django.http import HttpResponse
+from urllib.parse import unquote
 from django.contrib.auth import authenticate
+from django.utils.dateparse import parse_date
+from decimal import Decimal
 
 
 
@@ -30,11 +35,6 @@ class RegisterOrderAPIView(APIView):
         if not courses:
             return Response({'error': 'Courses are required.'}, status=status.HTTP_400_BAD_REQUEST)
 
-        # try:
-        #     device = Device.objects.get(device_id=request.data['device'], merchant=request.user)
-        # except Device.DoesNotExist:
-        #     return Response({'error': 'Device not found'}, status=status.HTTP_400_BAD_REQUEST)
-
         order = Order.objects.create(merchant=request.user, student_name=request.data['student_name'], address=request.data['address'], whatsapp_number=request.data['whatsapp_number'], total_price=request.data.get('totalPrice', 0))
         order.stored_ids = courses.replace("'", '"')
         order.save()
@@ -55,7 +55,6 @@ class OrdersView(APIView):
     def get(self, request):
         from_date = request.GET.get("from_date")
         to_date = request.GET.get("to_date")
-        # device_id = request.GET.get("device_id")
 
         if not from_date or not to_date:
             return Response({"error": "from_date and to_date are required."}, status=status.HTTP_400_BAD_REQUEST)
@@ -78,7 +77,6 @@ class LoginAPI(APIView):
     def post(self, request):
         username = request.data.get('username')
         password = request.data.get('password')
-        # device_id = request.data.get('device_id')
         
         if not username or not password:
             return Response({'error': 'Username and password are required'}, status=status.HTTP_400_BAD_REQUEST)
@@ -86,12 +84,84 @@ class LoginAPI(APIView):
         user = authenticate(username=username, password=password)
 
         if user is None:
-            user = User.objects.create_user(username=username, password=password)
+            user = CustomUser.objects.create_user(username=username, password=password)
 
         refresh = RefreshToken.for_user(user)
-
-        # Device.objects.get_or_create(device_id=device_id, merchant=user)
 
         return Response({
             'access': str(refresh.access_token),
         }, status=status.HTTP_200_OK)
+
+def export_xlsx(request):
+    merchant_username = request.GET.get("merchant__username")
+    ordered_at_gte = request.GET.get("ordered_at__range__gte")
+    ordered_at_lte = request.GET.get("ordered_at__range__lte")
+
+    queryset = Order.objects.all()
+
+    if merchant_username:
+        queryset = queryset.filter(merchant__username=unquote(merchant_username))
+
+    if ordered_at_gte:
+        ordered_at_gte = parse_date(ordered_at_gte)
+        if ordered_at_gte:
+            queryset = queryset.filter(ordered_at__date__gte=ordered_at_gte)
+
+    if ordered_at_lte:
+        ordered_at_lte = parse_date(ordered_at_lte)
+        if ordered_at_lte:
+            queryset = queryset.filter(ordered_at__date__lte=ordered_at_lte)
+
+    total_price = sum(order.total_price for order in queryset) or 0.0
+    payable_amount = total_price
+    if merchant_username and queryset.count() > 0:
+        merchant = CustomUser.objects.filter(username=merchant_username).first()
+        if merchant:
+            payable_amount = total_price - (total_price * (Decimal(merchant.percentage) / Decimal(100)))
+
+    workbook = openpyxl.Workbook()
+    worksheet = workbook.active
+    worksheet.title = "Orders Data"
+
+    headers = ["Merchant", "Student Name", "Total Price", "Whatsapp Number", "Ordered At"]
+    worksheet.append(headers)
+    
+    header_font = Font(bold=True)
+    center_alignment = Alignment(horizontal="center")
+
+    for col_num, header in enumerate(headers, 1):
+        col_letter = worksheet.cell(row=1, column=col_num).column_letter
+        worksheet.cell(row=1, column=col_num, value=header).font = header_font
+        worksheet.column_dimensions[col_letter].width = 20
+
+    row_num = 2
+    for order in queryset:
+        worksheet.append([
+            order.merchant.username,
+            order.student_name,
+            float(order.total_price),
+            order.whatsapp_number,
+            order.ordered_at.strftime("%Y-%m-%d %H:%M:%S"),
+        ])
+
+        for col_num in range(1, len(headers) + 1):
+            worksheet.cell(row=row_num, column=col_num).alignment = center_alignment
+
+        row_num += 1
+
+    summary_font = Font(bold=True)
+
+    worksheet.append(["Total Price", float(total_price)])
+    worksheet.append(["Payable Amount", float(payable_amount)])
+
+    for col_num in range(1, 4):
+        worksheet.cell(row=row_num, column=col_num).alignment = center_alignment
+        worksheet.cell(row=row_num + 1, column=col_num).alignment = center_alignment
+        worksheet.cell(row=row_num, column=col_num).font = summary_font
+        worksheet.cell(row=row_num + 1, column=col_num).font = summary_font
+
+    response = HttpResponse(content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+    response["Content-Disposition"] = 'attachment; filename="filtered_orders.xlsx"'
+    workbook.save(response)
+
+    return response
