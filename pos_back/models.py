@@ -11,6 +11,7 @@ class CustomUser(AbstractUser):
     percentage = models.FloatField(default=0.0)
     can_generate_bulk_coupons = models.BooleanField(default=False)
     api_token = models.CharField(max_length=255, blank=True, null=True)
+    address = models.CharField(max_length=255, null=True, blank=True)
 
 
 class Order(models.Model):
