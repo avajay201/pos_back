@@ -84,17 +84,25 @@ class LoginAPI(APIView):
 
         user = authenticate(username=username, password=password)
 
-        # if user is None or not user.api_token:
-        #     response = requests.post(API_ENDPOINTS.get('login'), data={"merchantID": username, "password": password})
-        #     if response.status_code != 200:
-        #         return Response({'error': 'Invalid credentials'}, status=status.HTTP_401_UNAUTHORIZED)
-        #     data = response.json()
-        #     user = CustomUser.objects.create_user(username=username, password=password)
+        if user is None or not user.api_token:
+            try:
+                response = requests.post(API_ENDPOINTS.get('login'), data={"merchantID": username, "password": password})
+                if response.status_code != 200:
+                    return Response({'error': 'Invalid credentials'}, status=status.HTTP_401_UNAUTHORIZED)
+                data = response.json()
+                data = data.get('data', {})
+                api_token = data.get('api_token')
+                if not api_token:
+                    return Response({"error": "Failed to login."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+                user = CustomUser.objects.create_user(username=username, password=password, api_token=api_token)
+            except Exception as e:
+                return Response({"error": "Failed to login."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
         refresh = RefreshToken.for_user(user)
 
         return Response({
             'access': str(refresh.access_token),
+            'bulk_generate': user.can_generate_bulk_coupons,
         }, status=status.HTTP_200_OK)
 
 
@@ -256,7 +264,9 @@ class CourseCouponsAPIView(APIView):
                     "Authorization": f"Bearer {request.user.api_token}",
                 })
             else:
-                response = requests.post(API_ENDPOINTS.get('coupons'), data={"sectionID": course_id})
+                response = requests.post(API_ENDPOINTS.get('coupons'), data={"sectionID": course_id}, headers={
+                    "Authorization": f"Bearer {request.user.api_token}",
+                })
 
             response.raise_for_status()
             data = response.json()
