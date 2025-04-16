@@ -7,5 +7,5 @@ API_ENDPOINTS = {
     'teachers_course_sections': f'{BASE_URL}/api/iq/pos/v1/teacher/profile/',
     'grades': f'{BASE_URL}/app/',
     'courses': f'{BASE_URL}/courses/',
-    'coupons': f'{BASE_URL}/api/iq/pos/v1/order-new-coupon-code/',
+    'coupons': f'{BASE_URL}/api/iq/pos/v1/order-new-coupon-code',
 }

@@ -101,8 +101,7 @@ class LoginAPI(APIView):
         refresh = RefreshToken.for_user(user)
 
         return Response({
-            'access': str(refresh.access_token),
-            'bulk_generate': user.can_generate_bulk_coupons,
+            'access': str(refresh.access_token)
         }, status=status.HTTP_200_OK)
 
 
@@ -249,18 +248,15 @@ class CourseCouponsAPIView(APIView):
         if not course_id:
             return Response({"error": "course_id is required."}, status=status.HTTP_400_BAD_REQUEST)
 
-        is_bulk = request.data.get("is_bulk")
-        if is_bulk:
-            is_bulk = True
-        else:
-            is_bulk = False
+        coupon_type = request.data.get("coupon_type")
+        coupon_count = request.data.get("coupon_count")
 
-        if is_bulk and not request.user.can_generate_bulk_coupons:
+        if coupon_type == 'bulk' and not request.user.can_generate_bulk_coupons:
             return Response({"error": "You don't have permission to generate bulk coupons."}, status=status.HTTP_403_FORBIDDEN)
 
         try:
-            if is_bulk:
-                response = requests.post(API_ENDPOINTS.get('coupons'), data={"sectionID": course_id}, headers={
+            if coupon_type == 'bulk':
+                response = requests.post(API_ENDPOINTS.get('coupons'), data={"sectionID": course_id, "count": coupon_count}, headers={
                     "Authorization": f"Bearer {request.user.api_token}",
                 })
             else:
@@ -270,9 +266,8 @@ class CourseCouponsAPIView(APIView):
 
             response.raise_for_status()
             data = response.json()
-            data = data.get('data', {})
-            coupon_codes = data.get('coupon_code', {})
-            return Response(coupon_codes, status=status.HTTP_200_OK)
+            coupons = data.get('data', [])
+            return Response(coupons, status=status.HTTP_200_OK)
         except Exception as e:
             return Response({"error": "Failed to fetch coupon code."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
