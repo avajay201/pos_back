@@ -9,6 +9,8 @@ from django.contrib.auth.models import AbstractUser
 
 class CustomUser(AbstractUser):
     percentage = models.FloatField(default=0.0)
+    can_generate_bulk_coupons = models.BooleanField(default=False)
+    api_token = models.CharField(max_length=255, blank=True, null=True)
 
 
 class Order(models.Model):

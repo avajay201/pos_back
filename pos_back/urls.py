@@ -15,10 +15,13 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 from django.contrib import admin
-from django.urls import path, re_path
+from django.urls import path
 from django.conf import settings
 from django.conf.urls.static import static
-from .views import RegisterOrderAPIView, OrdersView, LoginAPI, export_xlsx
+from .views import (RegisterOrderAPIView, OrdersView, LoginAPI,
+                    export_xlsx, TeacherAPIView, TeacherCourseSectionsAPIView,
+                    GradesAPIView, GradeCourseSectionsAPIView, CourseCouponsAPIView,
+                    CoursesAPIView)
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -26,6 +29,12 @@ urlpatterns = [
     path('api/order/', RegisterOrderAPIView.as_view()),
     path('api/orders/', OrdersView.as_view()),
     path("export-xlsx/", export_xlsx, name="export_xlsx"),
+    path('api/teachers/', TeacherAPIView.as_view()),
+    path('api/teacher-course-sections/<int:teacher_id>/', TeacherCourseSectionsAPIView.as_view()),
+    path('api/grades/', GradesAPIView.as_view()),
+    path('api/grade-course-sections/', GradeCourseSectionsAPIView.as_view()),
+    path('api/course-coupons/', CourseCouponsAPIView.as_view()),
+    path('api/courses/<int:id>/', CoursesAPIView.as_view()),
 ]
 
 if settings.DEBUG:

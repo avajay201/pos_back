@@ -13,7 +13,8 @@ from urllib.parse import unquote
 from django.contrib.auth import authenticate
 from django.utils.dateparse import parse_date
 from decimal import Decimal
-
+from .apis import API_ENDPOINTS
+import requests
 
 
 class OrderSerializer(serializers.ModelSerializer):
@@ -77,20 +78,25 @@ class LoginAPI(APIView):
     def post(self, request):
         username = request.data.get('username')
         password = request.data.get('password')
-        
+
         if not username or not password:
             return Response({'error': 'Username and password are required'}, status=status.HTTP_400_BAD_REQUEST)
-        
+
         user = authenticate(username=username, password=password)
 
-        if user is None:
-            user = CustomUser.objects.create_user(username=username, password=password)
+        # if user is None or not user.api_token:
+        #     response = requests.post(API_ENDPOINTS.get('login'), data={"merchantID": username, "password": password})
+        #     if response.status_code != 200:
+        #         return Response({'error': 'Invalid credentials'}, status=status.HTTP_401_UNAUTHORIZED)
+        #     data = response.json()
+        #     user = CustomUser.objects.create_user(username=username, password=password)
 
         refresh = RefreshToken.for_user(user)
 
         return Response({
             'access': str(refresh.access_token),
         }, status=status.HTTP_200_OK)
+
 
 def export_xlsx(request):
     merchant_username = request.GET.get("merchant__username")
@@ -165,3 +171,112 @@ def export_xlsx(request):
     workbook.save(response)
 
     return response
+
+
+class TeacherAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        try:
+            response = requests.get(API_ENDPOINTS.get('teachers'))
+            response.raise_for_status()
+            data = response.json()
+            teachers = data.get('data', [])
+            return Response(teachers, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({"error": "Failed to fetch teachers."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+class TeacherCourseSectionsAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, teacher_id):
+        try:
+            response = requests.get(API_ENDPOINTS.get('teachers_course_sections') + str(teacher_id) + '/')
+            response.raise_for_status()
+            data = response.json()
+            course_sections = data.get('data', {})
+            course_sections = course_sections.get('courses', {})
+            return Response(course_sections, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({"error": "Failed to fetch courses."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+class GradesAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        try:
+            response = requests.get(API_ENDPOINTS.get('grades'))
+            response.raise_for_status()
+            data = response.json()
+            grades = data.get('student_specialities', [])
+            return Response(grades, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({"error": "Failed to fetch grades."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+class GradeCourseSectionsAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        grade_id = request.GET.get("grade_id")
+        if not grade_id:
+            return Response({"error": "grade_id is required."}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            response = requests.get(f"{API_ENDPOINTS.get('courses')}/?grade={grade_id}")
+            response.raise_for_status()
+            data = response.json()
+            course_sections = data.get('data', [])
+            return Response(course_sections, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({"error": "Failed to fetch grades."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+class CourseCouponsAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        course_id = request.data.get("course_id")
+        if not course_id:
+            return Response({"error": "course_id is required."}, status=status.HTTP_400_BAD_REQUEST)
+
+        is_bulk = request.data.get("is_bulk")
+        if is_bulk:
+            is_bulk = True
+        else:
+            is_bulk = False
+
+        if is_bulk and not request.user.can_generate_bulk_coupons:
+            return Response({"error": "You don't have permission to generate bulk coupons."}, status=status.HTTP_403_FORBIDDEN)
+
+        try:
+            if is_bulk:
+                response = requests.post(API_ENDPOINTS.get('coupons'), data={"sectionID": course_id}, headers={
+                    "Authorization": f"Bearer {request.user.api_token}",
+                })
+            else:
+                response = requests.post(API_ENDPOINTS.get('coupons'), data={"sectionID": course_id})
+
+            response.raise_for_status()
+            data = response.json()
+            data = data.get('data', {})
+            coupon_codes = data.get('coupon_code', {})
+            return Response(coupon_codes, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({"error": "Failed to fetch coupon code."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+class CoursesAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, id):
+        try:
+            response = requests.get(f"{API_ENDPOINTS.get('courses')}{id}")
+            response.raise_for_status()
+            data = response.json()
+            courses = data.get('data', {})
+            courses = courses.get('sections', [])
+            return Response(courses, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({"error": "Failed to fetch courses."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
