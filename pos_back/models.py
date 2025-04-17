@@ -23,16 +23,6 @@ class CustomUser(AbstractUser):
 
         super().save(*args, **kwargs)
 
-    def save(self, *args, **kwargs):
-        if self.pk:
-            old = CustomUser.objects.get(pk=self.pk)
-            if old.password != self.password:
-                self.set_password(self.password)
-        else:
-            self.set_password(self.password)
-
-        super().save(*args, **kwargs)
-
 
 class Order(models.Model):
     merchant = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
