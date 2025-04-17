@@ -268,6 +268,9 @@ class CourseCouponsAPIView(APIView):
 
             response.raise_for_status()
             data = response.json()
+            status_code = data.get('status_code')
+            if status_code != 200:
+                return Response({'error': 'Failed to generate coupon.'}, status=status.HTTP_400_BAD_REQUEST)
             coupons = data.get('data', [])
             return Response(coupons, status=status.HTTP_200_OK)
         except Exception as e:
