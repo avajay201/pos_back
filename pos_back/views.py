@@ -286,8 +286,9 @@ class CoursesAPIView(APIView):
             response.raise_for_status()
             data = response.json()
             courses = data.get('data', {})
+            description = courses.get('description')
             teacher = courses.get('teacher', {}).get('name')
             courses = courses.get('sections', [])
-            return Response({'courses': courses, 'teacher': teacher}, status=status.HTTP_200_OK)
+            return Response({'courses': courses, 'teacher': teacher, 'description': description}, status=status.HTTP_200_OK)
         except Exception as e:
             return Response({"error": "Failed to fetch courses."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
