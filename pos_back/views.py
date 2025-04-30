@@ -187,11 +187,18 @@ class TeacherAPIView(APIView):
 
     def get(self, request):
         try:
-            response = requests.get(API_ENDPOINTS.get('teachers'))
-            response.raise_for_status()
-            data = response.json()
-            teachers = data.get('data', [])
-            return Response(teachers, status=status.HTTP_200_OK)
+            teachers_data = []
+            is_next = False
+            while True:
+                response = requests.get(is_next if is_next else API_ENDPOINTS.get('teachers'))
+                response.raise_for_status()
+                data = response.json()
+                is_next = data.get('next_page_url')
+                if not is_next:
+                    break
+                teachers = data.get('data', [])
+                teachers_data.extend(teachers)
+            return Response(teachers_data, status=status.HTTP_200_OK)
         except Exception as e:
             return Response({"error": "Failed to fetch teachers."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
